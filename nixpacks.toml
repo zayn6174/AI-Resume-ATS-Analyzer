@@ -1,3 +1,8 @@
+[phases.setup]
+aptPkgs = [
+  "libmagic1"
+]
+
 [phases.install]
 cmds = [
   "pip install -r requirements.txt"
