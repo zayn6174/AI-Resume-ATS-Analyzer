@@ -5,8 +5,7 @@
 #
 # After installing, download the spaCy model the backend uses at startup:
 #     python -m spacy download en_core_web_md
-#
-ats
+
 
 # ── Backend: web framework ──
 fastapi>=0.110
