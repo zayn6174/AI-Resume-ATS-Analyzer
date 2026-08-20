@@ -1,5 +1,5 @@
 [theme]
-primaryColor = "#4F46E5"
+primaryColor = "#0F1C3F"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F8FAFC"
 textColor = "#1E293B"
@@ -10,6 +10,7 @@ maxUploadSize = 10
 enableXsrfProtection = false
 enableCORS = false
 headless = true
+runOnSave = true
 
 [browser]
 gatherUsageStats = false

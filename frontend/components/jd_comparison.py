@@ -7,7 +7,7 @@ def display_jd_comparison(jd_comparison: Optional[Dict[str, Any]]) -> None:
     if not jd_comparison:
         return  # caller decides whether to render the section at all
 
-    st.markdown("### 🎯 Job Description Match")
+    st.markdown("### 🧾 Job Description Match")
 
     match_pct = float(jd_comparison.get("match_percentage", 0))
     semantic = float(jd_comparison.get("semantic_similarity", 0))
