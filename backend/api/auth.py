@@ -30,12 +30,23 @@ def _verify_token(token: str) -> dict:
     alg = header.get('alg')
 
     if alg in _ASYMMETRIC_ALGS:
+        logger.info(f"Using JWKS verification. Algorithm: {alg}")
+
         jwks_client = _get_jwks_client()
+
+        logger.info("JWKS client created")
+
         if jwks_client is None:
             raise jwt.InvalidTokenError(
-                'SUPABASE_URL not configured — cannot fetch JWKS to verify token'
+                'SUPABASE_URL not configured — cannot fetch JWKS'
             )
+
+        logger.info("Fetching signing key...")
+
         signing_key = jwks_client.get_signing_key_from_jwt(token).key
+
+        logger.info("Signing key fetched successfully")
+
         return jwt.decode(
             token,
             signing_key,
