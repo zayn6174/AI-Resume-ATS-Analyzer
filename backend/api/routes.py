@@ -84,7 +84,13 @@ async def analyze_resume(
 
         result = {
             "ats_score": 50,
-            "component_scores": {},
+            "component_scores": {
+                "formatting": 0,
+                "keywords": 0,
+                "content": 0,
+                "skill_validation": 0,
+                "ats_compatibility": 0,
+            },
             "issues_summary": [],
             "detailed_feedback": [],
             "skills": [],
