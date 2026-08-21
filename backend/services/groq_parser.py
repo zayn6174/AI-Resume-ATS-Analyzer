@@ -117,11 +117,16 @@ def parse_resume(raw_text: str)->Dict:
     prompt=RESUME_USER_PROMPT.format(raw_text=raw_text)
     raw_response=_call_groq(client, RESUME_SYSTEM_PROMPT, prompt)
 
-    logger.info("========== GROQ RAW RESPONSE ==========")
-    logger.info(raw_response[:1000])
-    logger.info("========================================")
+    print("========== GROQ RAW RESPONSE ==========", flush=True)
+    print(raw_response[:1000], flush=True)
+    print("========================================", flush=True)
 
     result=_try_parse_json(raw_response)
+
+
+    print("========== GROQ PARSED RESULT ==========", flush=True)
+    print(result, flush=True)
+    print("========================================", flush=True)
 
     if result is not None:
         return _validate_resume_result(result)
