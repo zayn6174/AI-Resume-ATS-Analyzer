@@ -10,10 +10,10 @@ DEFAULT_BACKEND_URL = "http://127.0.0.1:8000"
 def _backend_url() -> str:
     try:
         url = st.secrets["backend"]["url"]
-        print("USING BACKEND:", url)
+        st.sidebar.write("DEBUG BACKEND:", url)
         return url
     except (KeyError, FileNotFoundError):
-        print("USING LOCAL BACKEND")
+        st.sidebar.write("DEBUG USING LOCAL BACKEND")
         return DEFAULT_BACKEND_URL
 
 
