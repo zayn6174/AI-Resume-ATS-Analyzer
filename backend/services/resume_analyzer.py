@@ -14,65 +14,84 @@ def analyze_full_resume(
     embedder: SentenceTransformer,
     job_description: Optional[str] = None,
 ) -> Dict:
-    import logging
-    import time 
 
-    logger = logging.getLogger('ats_resume_scorer')
-    logger.info("==== ENTERED analyze_full_resume====")
-    logger.info("STEP 1 starting Groq resume parsing")
-    start=time.time()
+    import time
+
+    start = time.time()
+
+    print("==== ENTERED analyze_full_resume ====", flush=True)
+
+    print("STEP 1: Starting Groq resume parsing", flush=True)
 
     parsed_resume = parse_resume(resume_text)
-    logger.info(
-        f"STEP 1 parse_resume completed in {time.time()-start:.2f}s"
-    )
-    logger.info(f"Groq parsed summary: {parsed_resume.get('professional_summary', '')[:100]!r}")
-    logger.info(f"Groq parsed skills count: {len(parsed_resume.get('skills', []))}")
-    logger.info(f"Groq parsed experience count: {len(parsed_resume.get('experience', []))}")
 
-    skills          = parsed_resume.get('skills', [])
-    projects        = parsed_resume.get('projects', [])
-    keywords        = parsed_resume.get('keywords', [])
-    action_verbs    = parsed_resume.get('action_verbs', [])
+    print(
+        f"STEP 1 DONE: Groq parsing took {time.time()-start:.2f}s",
+        flush=True
+    )
+
+    print(
+        f"Skills found: {len(parsed_resume.get('skills', []))}",
+        flush=True
+    )
+
+
+    skills = parsed_resume.get("skills", [])
+    projects = parsed_resume.get("projects", [])
+    keywords = parsed_resume.get("keywords", [])
+    action_verbs = parsed_resume.get("action_verbs", [])
+
 
     experience_months = sum(
-        int(e.get('duration_months', 0))
-        for e in parsed_resume.get('experience', [])
+        int(e.get("duration_months", 0))
+        for e in parsed_resume.get("experience", [])
         if isinstance(e, dict)
     )
 
+
     contact_info = {
-        'email':     parsed_resume.get('email'),
-        'phone':     parsed_resume.get('phone'),
-        'linkedin':  parsed_resume.get('linkedin'),
-        'github':    parsed_resume.get('github'),
-        'portfolio': None,
+        "email": parsed_resume.get("email"),
+        "phone": parsed_resume.get("phone"),
+        "linkedin": parsed_resume.get("linkedin"),
+        "github": parsed_resume.get("github"),
+        "portfolio": None,
     }
-    logger.info("STEP 2 starting skill validation")
+
+
+    print("STEP 2: Starting skill validation", flush=True)
 
     skill_validation = validate_skills_with_projects(
         skills=skills,
         projects=projects,
-        experience_entries=parsed_resume.get('experience', []),
+        experience_entries=parsed_resume.get("experience", []),
         embedder=embedder,
     )
-    logger.info(
-        f"STEP 2 skill validation completed in {time.time()-start:.2f}s"
+
+    print(
+        f"STEP 2 DONE: Skill validation took {time.time()-start:.2f}s",
+        flush=True
     )
-        
-        
-        
-        
+
 
     jd_comparison_result = None
     jd_keywords = None
+
+
     if job_description and job_description.strip():
-        parsed_jd = parse_job_description(job_description.strip())
+
+        print("STEP 3: Starting JD comparison", flush=True)
+
+        parsed_jd = parse_job_description(
+            job_description.strip()
+        )
+
         jd_keywords = list(set(
-            parsed_jd.get('keywords', []) +
-            parsed_jd.get('required_skills', []) +
-            parsed_jd.get('preferred_skills', [])
+            parsed_jd.get("keywords", [])
+            + parsed_jd.get("required_skills", [])
+            + parsed_jd.get("preferred_skills", [])
         ))
+
+
         jd_comparison_result = compare_resume_with_jd(
             resume_text=resume_text,
             resume_keywords=keywords,
@@ -82,23 +101,22 @@ def analyze_full_resume(
             embedder=embedder,
             nlp=nlp,
         )
-        logger.info(
-            f"STEP 3 JD comparison completed in {time.time()-start:.2f}s"
-            
-        )
 
-            
-        
+        print("STEP 3 DONE: JD comparison finished", flush=True)
 
 
 
     from backend.utils.file_utils import (
-        get_default_grammar_results, get_default_location_results,
+        get_default_grammar_results,
+        get_default_location_results,
     )
-    grammar_results  = get_default_grammar_results()
+
+
+    grammar_results = get_default_grammar_results()
     location_results = get_default_location_results()
 
-    logger.info("STEP 4 starting score calculation")
+
+    print("STEP 4: Starting ATS scoring", flush=True)
 
 
     scores = calculate_overall_score(
@@ -114,11 +132,14 @@ def analyze_full_resume(
         experience_months=experience_months,
     )
 
-    logger.info("STEP 4 score calculation completed")
+
+    print("STEP 4 DONE: ATS scoring completed", flush=True)
 
 
-    logger.info("STEP 5 starting feedback analysis")
-    
+
+    print("STEP 5: Starting feedback analysis", flush=True)
+
+
     detailed_feedback = analyze_issues(
         resume_text=resume_text,
         parsed_resume=parsed_resume,
@@ -130,65 +151,110 @@ def analyze_full_resume(
         contact_info=contact_info,
     )
 
-    logger.info("STEP 5 feedback analysis completed")
+
+    print("STEP 5 DONE: Feedback completed", flush=True)
 
 
-    logger.info("STEP 6 starting issue summary")
 
-    issues_summary = generate_issues_summary(detailed_feedback)
+    issues_summary = generate_issues_summary(
+        detailed_feedback
+    )
 
-    validated_raw   = skill_validation.get('validated_skills', [])
-    unvalidated_raw = skill_validation.get('unvalidated_skills', [])
-    total_skills    = len(validated_raw) + len(unvalidated_raw)
-    val_pct         = round((len(validated_raw) / total_skills * 100) if total_skills > 0 else 0, 1)
+
+    validated_raw = skill_validation.get(
+        "validated_skills", []
+    )
+
+    unvalidated_raw = skill_validation.get(
+        "unvalidated_skills", []
+    )
+
+
+    total_skills = len(validated_raw) + len(unvalidated_raw)
+
+    val_pct = round(
+        (len(validated_raw) / total_skills * 100)
+        if total_skills > 0
+        else 0,
+        1
+    )
+
 
     skill_validation_details = {
         "validated": [
             {
-                "skill":    item['skill'],
-                "projects": item.get('projects', []),
+                "skill": item["skill"],
+                "projects": item.get("projects", []),
             }
             for item in validated_raw
         ],
-        "unvalidated":     unvalidated_raw,
-        "total":           total_skills,
+        "unvalidated": unvalidated_raw,
+        "total": total_skills,
         "validated_count": len(validated_raw),
-        "validation_pct":  val_pct,
+        "validation_pct": val_pct,
     }
 
-    logger.info("STEP 6 issue summary completed")
 
-
-    logger.info("STEP 7 preparing final response")
+    print(
+        f"COMPLETE: Total analysis time {time.time()-start:.2f}s",
+        flush=True
+    )
 
 
     return {
-        "ATS_score":          scores['overall_score'],
-        "ats_score":          scores['overall_score'],
+
+        "ATS_score": scores["overall_score"],
+        "ats_score": scores["overall_score"],
+
         "component_scores": {
-            "formatting":       scores['formatting_score'],
-            "keywords":         scores['keywords_score'],
-            "content":          scores['content_score'],
-            "skill_validation": scores['skill_validation_score'],
-            "ats_compatibility": scores['ats_compatibility_score'],
+            "formatting": scores["formatting_score"],
+            "keywords": scores["keywords_score"],
+            "content": scores["content_score"],
+            "skill_validation": scores["skill_validation_score"],
+            "ats_compatibility": scores["ats_compatibility_score"],
         },
-        "issues_summary":    issues_summary,
+
+        "issues_summary": issues_summary,
+
         "detailed_feedback": detailed_feedback,
+
         "jd_match_analysis": jd_comparison_result,
-        "jd_comparison":     jd_comparison_result,
-        "skills":            skills,
-        "matched_keywords":  (
-            jd_comparison_result['matched_keywords']
-            if jd_comparison_result else list(keywords[:20])
+
+        "jd_comparison": jd_comparison_result,
+
+        "skills": skills,
+
+        "matched_keywords": (
+            jd_comparison_result["matched_keywords"]
+            if jd_comparison_result
+            else list(keywords[:20])
         ),
-        "missing_keywords":  (
-            jd_comparison_result['missing_keywords']
-            if jd_comparison_result else []
+
+        "missing_keywords": (
+            jd_comparison_result["missing_keywords"]
+            if jd_comparison_result
+            else []
         ),
-        "strengths": _generate_strengths(parsed_resume, skills, projects, action_verbs, skill_validation, scores),
-        "interpretation":    scores.get('overall_interpretation', ''),
-        "skill_validation_details": skill_validation_details,
-        "experience_months": experience_months,
+
+        "strengths": _generate_strengths(
+            parsed_resume,
+            skills,
+            projects,
+            action_verbs,
+            skill_validation,
+            scores,
+        ),
+
+        "interpretation": scores.get(
+            "overall_interpretation",
+            ""
+        ),
+
+        "skill_validation_details":
+            skill_validation_details,
+
+        "experience_months":
+            experience_months,
     }
 
 
