@@ -32,18 +32,41 @@ def analyze_resume(
     access_token: str,
     job_description: str = "",
 ) -> Dict[str, Any]:
+
+    print("=== ANALYZE RESUME CALLED ===")
+    print("TOKEN LENGTH:", len(access_token))
+    print("TOKEN START:", access_token[:20])
+
+    backend = _backend_url()
+    print("USING BACKEND:", backend)
+
     files = {
-        "resume": (resume_file.name, resume_file.getvalue(), resume_file.type),
+        "resume": (
+            resume_file.name,
+            resume_file.getvalue(),
+            resume_file.type,
+        ),
     }
-    data = {"job_description": job_description}
+
+    data = {
+        "job_description": job_description
+    }
+
+    print("SENDING REQUEST TO:", f"{backend}/api/v1/analyze-resume")
+
     response = requests.post(
-        f"{_backend_url()}/api/v1/analyze-resume",
+        f"{backend}/api/v1/analyze-resume",
         files=files,
         data=data,
         headers=_auth_headers(access_token),
         timeout=180,
     )
+
+    print("BACKEND STATUS:", response.status_code)
+    print("BACKEND RESPONSE:", response.text[:500])
+
     response.raise_for_status()
+
     return response.json()
 
 

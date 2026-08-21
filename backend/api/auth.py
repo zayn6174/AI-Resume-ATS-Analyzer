@@ -95,6 +95,7 @@ def get_current_user(
             headers={'WWW-Authenticate': 'Bearer'},
         )
     except jwt.InvalidTokenError as exc:
+        logger.error(f"JWT ERROR:{exc}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f'Invalid token: {exc}',
@@ -103,7 +104,7 @@ def get_current_user(
     except Exception as exc:
         # PyJWKClient can raise network errors fetching JWKS; surface them as 401
         # so a misconfigured backend doesn't look like a 500 to the user.
-        logger.warning(f'JWT verification failed: {exc}')
+        logger.warning(f'JWT UNKNOWN ERROR: {exc}')
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f'Token verification failed: {exc}',
