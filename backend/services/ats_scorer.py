@@ -72,23 +72,39 @@ def detect_location_info(text: str, nlp: spacy.Language) -> Dict:
         'penalty_applied':    penalty,
     }
 
-def _calculate_semantic_similarity(skill: str, text: str, embedder: SentenceTransformer) -> float:
-    #similarity = (A · B) / (|A| × |B|)
+def _calculate_semantic_similarity(
+    skill: str,
+    text: str,
+    embedder: SentenceTransformer
+) -> float:
+
+    # similarity = (A · B) / (|A| × |B|)
     if not skill or not text:
         return 0.0
+
     try:
-        skill_vec  = embedder.encode(skill, convert_to_tensor=False)
-        text_vec   = embedder.encode(text,  convert_to_tensor=False)
+        embeddings = embedder.encode(
+            [skill, text],
+            convert_to_numpy=True
+        )
+
+        skill_vec = embeddings[0]
+        text_vec  = embeddings[1]
 
         similarity = np.dot(skill_vec, text_vec) / (
-            np.linalg.norm(skill_vec) * np.linalg.norm(text_vec)
+            np.linalg.norm(skill_vec) *
+            np.linalg.norm(text_vec)
         )
 
         return float(max(0.0, min(1.0, similarity)))
-    except Exception as e:
-        log_warning(f"Similarity error for '{skill}': {e}", context='ats_scorer')
-        return 0.0
 
+    except Exception as e:
+        log_warning(
+            f"Similarity error for '{skill}': {e}",
+            context='ats_scorer'
+        )
+        return 0.0
+    
 def _skill_matches(skill: str, text: str, embedder: SentenceTransformer, threshold: float) -> Tuple[bool, float]:
 
     #fast, o(n) directly check if skill is a substring of the text (case-insensitive)
@@ -127,9 +143,14 @@ def validate_skills_with_projects(
     unvalidated_skills    = []
     skill_project_mapping = {}
 
-    for skill in skills:
+    for idx, skill in enumerate(skills, 1):
+        print(
+            f"VALIDATING SKILL {idx}/{len(skills)}: {skill}",
+            flush=True
+        )
+
         matching_projects = []
-        max_similarity    = 0.0
+        max_similarity = 0.0
 
         for project in projects:
             project_text = f"{project.get('title', '')} {project.get('description', '')}"
