@@ -15,8 +15,17 @@ def analyze_full_resume(
     job_description: Optional[str] = None,
 ) -> Dict:
     import logging
+    import time 
+
     logger = logging.getLogger('ats_resume_scorer')
+    logger.info("==== ENTERED analyze_full_resume====")
+    logger.info("STEP 1 starting Groq resume parsing")
+    start=time.time()
+
     parsed_resume = parse_resume(resume_text)
+    logger.info(
+        f"STEP 1 parse_resume completed in {time.time()-start:.2f}s"
+    )
     logger.info(f"Groq parsed summary: {parsed_resume.get('professional_summary', '')[:100]!r}")
     logger.info(f"Groq parsed skills count: {len(parsed_resume.get('skills', []))}")
     logger.info(f"Groq parsed experience count: {len(parsed_resume.get('experience', []))}")
@@ -39,12 +48,21 @@ def analyze_full_resume(
         'github':    parsed_resume.get('github'),
         'portfolio': None,
     }
+    logger.info("STEP 2 starting skill validation")
+
     skill_validation = validate_skills_with_projects(
         skills=skills,
         projects=projects,
         experience_entries=parsed_resume.get('experience', []),
         embedder=embedder,
     )
+    logger.info(
+        f"STEP 2 skill validation completed in {time.time()-start:.2f}s"
+    )
+        
+        
+        
+        
 
     jd_comparison_result = None
     jd_keywords = None
@@ -64,12 +82,24 @@ def analyze_full_resume(
             embedder=embedder,
             nlp=nlp,
         )
+        logger.info(
+            f"STEP 3 JD comparison completed in {time.time()-start:.2f}s"
+            
+        )
+
+            
+        
+
+
 
     from backend.utils.file_utils import (
         get_default_grammar_results, get_default_location_results,
     )
     grammar_results  = get_default_grammar_results()
     location_results = get_default_location_results()
+
+    logger.info("STEP 4 starting score calculation")
+
 
     scores = calculate_overall_score(
         text=resume_text,
@@ -83,6 +113,12 @@ def analyze_full_resume(
         jd_keywords=jd_keywords,
         experience_months=experience_months,
     )
+
+    logger.info("STEP 4 score calculation completed")
+
+
+    logger.info("STEP 5 starting feedback analysis")
+    
     detailed_feedback = analyze_issues(
         resume_text=resume_text,
         parsed_resume=parsed_resume,
@@ -93,6 +129,11 @@ def analyze_full_resume(
         scores=scores,
         contact_info=contact_info,
     )
+
+    logger.info("STEP 5 feedback analysis completed")
+
+
+    logger.info("STEP 6 starting issue summary")
 
     issues_summary = generate_issues_summary(detailed_feedback)
 
@@ -114,6 +155,12 @@ def analyze_full_resume(
         "validated_count": len(validated_raw),
         "validation_pct":  val_pct,
     }
+
+    logger.info("STEP 6 issue summary completed")
+
+
+    logger.info("STEP 7 preparing final response")
+
 
     return {
         "ATS_score":          scores['overall_score'],
@@ -143,6 +190,10 @@ def analyze_full_resume(
         "skill_validation_details": skill_validation_details,
         "experience_months": experience_months,
     }
+
+
+
+
 
 
 def _generate_strengths(
