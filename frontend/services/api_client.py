@@ -53,21 +53,31 @@ def analyze_resume(
     }
 
     print("SENDING REQUEST TO:", f"{backend}/api/v1/analyze-resume")
+    print("🚀 BEFORE BACKEND REQUEST")
 
     response = requests.post(
         f"{backend}/api/v1/analyze-resume",
         files=files,
         data=data,
         headers=_auth_headers(access_token),
-        timeout=180,
+        timeout=(10,180)
     )
+    print("✅ AFTER BACKEND REQUEST:", response.status_code)
 
     print("BACKEND STATUS:", response.status_code)
     print("BACKEND RESPONSE:", response.text[:500])
 
     response.raise_for_status()
 
-    return response.json()
+    result = response.json()
+
+    print("========== API CLIENT DEBUG ==========", flush=True)
+    print("KEYS:", result.keys(), flush=True)
+    print("COMPONENT SCORES:", result.get("component_scores"), flush=True)
+    print("ATS SCORE:", result.get("ats_score"), flush=True)
+    print("======================================", flush=True)
+
+    return result
 
 
 def get_history(access_token: str) -> List[Dict[str, Any]]:
