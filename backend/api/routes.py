@@ -80,16 +80,20 @@ async def analyze_resume(
 
         from backend.services.resume_analyzer import analyze_full_resume
 
-        logger.info("STEP 4: starting analysis pipeline")
+        logger.info("TEST: skipping analysis pipeline")
 
-        result = analyze_full_resume(
-            resume_text=resume_text,
-            nlp=nlp,
-            embedder=embedder,
-            job_description=job_description
-        )
-        logger.info("STEP 5: analysis pipeline finished")
+        result = {
+            "ats_score": 50,
+            "component_scores": {},
+            "issues_summary": [],
+            "detailed_feedback": [],
+            "skills": [],
+            "missing_keywords": [],
+            "matched_keywords": [],
+            "interpretation": "",
+        }
 
+        logger.info("TEST: fake analysis completed")
         logger.info(
             f"Analysis completed in "
             f"{time.time() - analysis_start:.2f}s"
