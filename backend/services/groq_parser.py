@@ -113,31 +113,34 @@ def _try_parse_json(text: str) -> dict | None:
     
 def parse_resume(raw_text: str) -> Dict:
     client = _get_client()
-    prompt = RESUME_USER_PROMPT.format(raw_text=raw_text)
-    raw_response = _call_groq(client, RESUME_SYSTEM_PROMPT, prompt)
 
-    print("========== GROQ RAW RESPONSE ==========", flush=True)
-    print(raw_response[:1000], flush=True)
-    print("========================================", flush=True)
+    prompt = RESUME_USER_PROMPT.format(raw_text=raw_text)
+
+    raw_response = _call_groq(
+        client,
+        RESUME_SYSTEM_PROMPT,
+        prompt
+    )
+
+    # 👇 ADD HERE
+    logger.warning("========== GROQ RAW RESPONSE ==========")
+    logger.warning(raw_response[:1000])
+    logger.warning("========================================")
 
     result = _try_parse_json(raw_response)
 
-    print("========== GROQ PARSED RESULT ==========", flush=True)
+    logger.warning(f"GROQ RESULT EXISTS: {result is not None}")
 
     if result:
-        print("Keys:", result.keys(), flush=True)
-        print("Skills count:", len(result.get("skills", [])), flush=True)
-        print("Experience count:", len(result.get("experience", [])), flush=True)
-        print("Projects count:", len(result.get("projects", [])), flush=True)
-    else:
-        print("Parsing failed - result is None", flush=True)
-
-    print("========================================", flush=True)
+        logger.warning(f"Keys: {result.keys()}")
+        logger.warning(f"Skills count: {len(result.get('skills', []))}")
+        logger.warning(f"Experience count: {len(result.get('experience', []))}")
+        logger.warning(f"Projects count: {len(result.get('projects', []))}")
 
     if result is not None:
         return _validate_resume_result(result)
 
-    logger.warning("Groq returned invalid JSON, retrying...")
+    logger.warning("Groq resume parse failed, retrying...")
 
     
 
