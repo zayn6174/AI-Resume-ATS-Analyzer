@@ -28,7 +28,10 @@ async def analyze_resume(
     job_description: str = Form('', description='Job description text (optional)'),
     user_id: str = Depends(get_current_user),
 ):
+   
     warnings: List[str] = []
+
+    logger.info("=== ANALYZE ENDPOINT ENTERED ===")
 
 
     nlp      = request.app.state.nlp
@@ -40,6 +43,8 @@ async def analyze_resume(
 
         file_bytes = await resume.read()
         filename = resume.filename or 'resume'
+        
+        logger.info("STEP 2: file read complete")
 
         from backend.services.resume_parser import (
             FileParsingError,
@@ -51,6 +56,8 @@ async def analyze_resume(
             file_bytes,
             filename
         )
+        logger.info("STEP 3: resume parsed successfully")
+        logger.info(f"Parsed '{filename}': {len(resume_text)} chars extracted")
 
         logger.info(
             f"Parsed '{filename}': "
@@ -73,12 +80,15 @@ async def analyze_resume(
 
         from backend.services.resume_analyzer import analyze_full_resume
 
+        logger.info("STEP 4: starting analysis pipeline")
+
         result = analyze_full_resume(
             resume_text=resume_text,
             nlp=nlp,
             embedder=embedder,
             job_description=job_description
         )
+        logger.info("STEP 5: analysis pipeline finished")
 
         logger.info(
             f"Analysis completed in "
