@@ -116,10 +116,17 @@ def parse_resume(raw_text: str)->Dict:
     client=_get_client()
     prompt=RESUME_USER_PROMPT.format(raw_text=raw_text)
     raw_response=_call_groq(client, RESUME_SYSTEM_PROMPT, prompt)
+
+    logger.info("========== GROQ RAW RESPONSE ==========")
+    logger.info(raw_response[:1000])
+    logger.info("========================================")
+
     result=_try_parse_json(raw_response)
 
     if result is not None:
         return _validate_resume_result(result)
+    
+    logger.info(f"GROQ PARSED RESULT: {result}")
     
 
     logger.warning("Groq resume parse: first attempt returned invalid JSON, retrying...")
