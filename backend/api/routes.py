@@ -159,6 +159,20 @@ async def health_check(request: Request):
         'nlp_loaded':      request.app.state.nlp is not None,
         'embedder_loaded': request.app.state.embedder is not None,
     }
+@router.post("/test-upload")
+async def test_upload(
+    resume: UploadFile = File(...)
+):
+    logger.info("TEST UPLOAD RECEIVED")
+
+    data = await resume.read()
+
+    logger.info(f"TEST FILE SIZE: {len(data)}")
+
+    return {
+        "filename": resume.filename,
+        "size": len(data)
+    }
 
 @router.get('/history')
 async def get_history(user_id: str = Depends(get_current_user)):
