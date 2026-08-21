@@ -84,7 +84,10 @@ def _call_groq(client:Groq, system_prompt:str, user_prompt:str)->str:
             {'role': 'user', 'content': user_prompt}
         ],
         temperature=0.0,
-        max_tokens=4096
+        max_tokens=4096,
+        response_format={
+            "type":"json_object"
+        }
     )
 
     return response.choices[0].message.content.strip()
@@ -115,7 +118,7 @@ def parse_resume(raw_text: str)->Dict:
     raw_response=_call_groq(client, RESUME_SYSTEM_PROMPT, prompt)
     result=_try_parse_json(raw_response)
 
-    if result is None:
+    if result is not None:
         return _validate_resume_result(result)
     
 
