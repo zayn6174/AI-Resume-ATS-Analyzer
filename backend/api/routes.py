@@ -1,6 +1,7 @@
 import logging
 import time
 from typing import List, Optional
+from backend.services.resume_analyzer import analyze_full_resume
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
@@ -74,35 +75,32 @@ async def analyze_resume(
 
     #Full Analysis Pipeline 
     try:
-        logger.info("Starting full resume analysis...")
+        logger.info("STEP 4: starting analysis pipeline")
 
         analysis_start = time.time()
 
-        from backend.services.resume_analyzer import analyze_full_resume
+        result = analyze_full_resume(
+            resume_text=resume_text,
+            nlp=nlp,
+            embedder=embedder,
+            job_description=job_description
+        )
+        # TEMP DEBUG
+        logger.warning("========== ANALYSIS DEBUG ==========")
+        logger.warning(f"Resume text length: {len(resume_text)}")
+        logger.warning(f"Result keys: {result.keys()}")
+        logger.warning(f"Skills: {result.get('skills')}")
+        logger.warning(f"ATS Score: {result.get('ats_score')}")
+        logger.warning("====================================")
 
-        logger.info("TEST: skipping analysis pipeline")
 
-        result = {
-            "ats_score": 50,
-            "component_scores": {
-                "formatting": 0,
-                "keywords": 0,
-                "content": 0,
-                "skill_validation": 0,
-                "ats_compatibility": 0,
-            },
-            "issues_summary": [],
-            "detailed_feedback": [],
-            "skills": [],
-            "missing_keywords": [],
-            "matched_keywords": [],
-            "interpretation": "",
-        }
-
-        logger.info("TEST: fake analysis completed")
         logger.info(
-            f"Analysis completed in "
-            f"{time.time() - analysis_start:.2f}s"
+            f"STEP 5: analysis pipeline finished in {time.time()-analysis_start:.2f}s"
+        )
+
+        logger.info(
+                    f"Analysis completed in "
+                    f"{time.time() - analysis_start:.2f}s"
         )
     except Exception as exc:
         logger.error(f'Full analysis pipeline failed: {exc}')
