@@ -57,6 +57,9 @@ app.add_middleware(
     allow_headers     = ['*'],
 
 )
+@app.get("/ping")
+async def ping():
+    return {"message": "pong"}
 
 app.include_router(router)
 
