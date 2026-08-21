@@ -111,27 +111,34 @@ def _try_parse_json(text: str) -> dict | None:
     except json.JSONDecodeError:
         return None
     
-def parse_resume(raw_text: str)->Dict:
-
-    client=_get_client()
-    prompt=RESUME_USER_PROMPT.format(raw_text=raw_text)
-    raw_response=_call_groq(client, RESUME_SYSTEM_PROMPT, prompt)
+def parse_resume(raw_text: str) -> Dict:
+    client = _get_client()
+    prompt = RESUME_USER_PROMPT.format(raw_text=raw_text)
+    raw_response = _call_groq(client, RESUME_SYSTEM_PROMPT, prompt)
 
     print("========== GROQ RAW RESPONSE ==========", flush=True)
     print(raw_response[:1000], flush=True)
     print("========================================", flush=True)
 
-    result=_try_parse_json(raw_response)
-
+    result = _try_parse_json(raw_response)
 
     print("========== GROQ PARSED RESULT ==========", flush=True)
-    print(result, flush=True)
+
+    if result:
+        print("Keys:", result.keys(), flush=True)
+        print("Skills count:", len(result.get("skills", [])), flush=True)
+        print("Experience count:", len(result.get("experience", [])), flush=True)
+        print("Projects count:", len(result.get("projects", [])), flush=True)
+    else:
+        print("Parsing failed - result is None", flush=True)
+
     print("========================================", flush=True)
 
     if result is not None:
         return _validate_resume_result(result)
-    
-    logger.info(f"GROQ PARSED RESULT: {result}")
+
+    logger.warning("Groq returned invalid JSON, retrying...")
+
     
 
     logger.warning("Groq resume parse: first attempt returned invalid JSON, retrying...")
