@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -35,8 +36,10 @@ async def analyze_resume(
 
 
     try:
+        parse_start = time.time()
+
         file_bytes = await resume.read()
-        filename   = resume.filename or 'resume'
+        filename = resume.filename or 'resume'
 
         from backend.services.resume_parser import (
             FileParsingError,
@@ -44,8 +47,16 @@ async def analyze_resume(
             parse_resume_file,
         )
 
-        resume_text, _metadata = parse_resume_file(file_bytes, filename)
-        logger.info(f"Parsed '{filename}': {len(resume_text)} chars extracted")
+        resume_text, *metadata = parse_resume_file(
+            file_bytes,
+            filename
+        )
+
+        logger.info(
+            f"Parsed '{filename}': "
+            f"{len(resume_text)} chars extracted "
+            f"in {time.time() - parse_start:.2f}s"
+        )
 
     except Exception as exc:
         logger.error(f'File parsing failed: {exc}')
@@ -56,13 +67,22 @@ async def analyze_resume(
 
     #Full Analysis Pipeline 
     try:
+        logger.info("Starting full resume analysis...")
+
+        analysis_start = time.time()
+
         from backend.services.resume_analyzer import analyze_full_resume
-        
+
         result = analyze_full_resume(
             resume_text=resume_text,
             nlp=nlp,
             embedder=embedder,
             job_description=job_description
+        )
+
+        logger.info(
+            f"Analysis completed in "
+            f"{time.time() - analysis_start:.2f}s"
         )
     except Exception as exc:
         logger.error(f'Full analysis pipeline failed: {exc}')
