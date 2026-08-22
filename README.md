@@ -1,83 +1,251 @@
-# ATS Resume Scorer
+# 🎯 ATS Resume Scorer
 
-A web app that scores how well a resume matches a job description and returns actionable feedback. Built with FastAPI + Streamlit, using spaCy and Sentence Transformers for NLP and the Groq API for LLM-generated suggestions.
+An AI-powered resume analysis platform that evaluates how well a resume matches a job description and provides actionable feedback to improve ATS (Applicant Tracking System) performance.
 
-## What it does
+Built with **FastAPI + Streamlit**, this application combines NLP techniques, semantic similarity models, and LLM-powered suggestions to analyze resumes, identify improvement areas, and help candidates optimize their resumes for better job matching.
 
-1. Upload a resume (PDF / DOC / DOCX) and paste a job description.
-2. The backend parses the resume, extracts skills and experience, and compares them to the JD using semantic similarity.
-3. You get an ATS score, a breakdown by category (formatting, keywords, content, skill validation, ATS compatibility), and LLM-written suggestions for what to improve.
-4. Past analyses are saved to your account so you can revisit them.
+---
 
-## Tech stack
+# 🚀 Live Deployment
 
-- **Frontend:** Streamlit
-- **Backend:** FastAPI (Python)
-- **NLP:** spaCy (`en_core_web_md`), Sentence Transformers (`all-MiniLM-L6-v2`)
-- **LLM:** Groq API (Llama 3)
-- **Auth + Database:** Supabase (email/password and Google OAuth)
-- **PDF report export:** WeasyPrint + Jinja2
+- **Frontend:** Streamlit Cloud
+- **Backend API:** Railway (FastAPI)
 
-## Project structure
+## Application Architecture
+
+```
+User
+ |
+ v
+Streamlit Frontend
+ |
+ v
+FastAPI Backend (Railway)
+ |
+ +--> Resume Processing
+ +--> NLP Analysis
+ +--> Sentence Transformers
+ +--> Groq LLM Suggestions
+ +--> Supabase Authentication & Database
+```
+
+---
+
+# ✨ Features
+
+## 📄 Resume Analysis
+
+- Upload resumes in PDF, DOC, and DOCX formats
+- Extract resume content automatically
+- Analyze resume structure and formatting
+- Compare resume content with job descriptions
+- Generate ATS compatibility scores
+
+---
+
+## 🤖 AI-Powered Feedback
+
+The system provides:
+
+- Overall ATS score
+- Category-wise scoring:
+  - Formatting
+  - Keywords & Skills
+  - Content Quality
+  - Skill Validation
+  - ATS Compatibility
+
+- Detailed resume feedback
+- Critical issue detection
+- Actionable improvement recommendations
+- AI-generated suggestions for optimization
+
+---
+
+## 🎯 Job Description Matching
+
+- Semantic similarity comparison between resume and job description
+- Matched keyword detection
+- Missing keyword identification
+- Skills gap analysis
+- Resume-to-job alignment insights
+
+---
+
+## 🔐 User Authentication & History
+
+- Email/password authentication
+- Google OAuth login
+- Secure user sessions
+- Save previous resume analyses
+- View analysis history
+- Delete saved reports
+
+---
+
+## 📑 Report Generation
+
+- Generate ATS analysis reports
+- Export results as PDF
+- Download detailed resume feedback
+
+---
+
+# 🛠 Tech Stack
+
+## Frontend
+
+- Streamlit
+
+## Backend
+
+- FastAPI
+- Python
+
+## NLP & Machine Learning
+
+- spaCy (`en_core_web_md`)
+- Sentence Transformers (`all-MiniLM-L6-v2`)
+
+## Large Language Model
+
+- Groq API
+- Llama models
+
+## Authentication & Database
+
+- Supabase
+  - Authentication
+  - PostgreSQL Database
+
+## PDF Generation
+
+- WeasyPrint
+- Jinja2
+
+---
+
+# 📂 Project Structure
 
 ```
 ATS_SCORER/
-├── backend/              FastAPI app, NLP services, API routes
-├── frontend/             Streamlit app, views, components
-├── jupyter notebooks/    Research and dataset prep (not used at runtime)
-├── ml model/             Exported ML artifacts
-├── requirements.txt      Combined backend + frontend dependencies
-└── .env.example          Template for environment variables
+
+├── backend/
+│   ├── API routes
+│   ├── NLP services
+│   ├── Resume processing
+│   └── Scoring logic
+│
+├── frontend/
+│   ├── Streamlit application
+│   ├── Views
+│   ├── Components
+│   └── API client
+│
+├── jupyter notebooks/
+│   └── Research and experimentation
+│
+├── ml model/
+│   └── ML artifacts
+│
+├── requirements.txt
+└── .env.example
 ```
 
-## Setup
+---
 
-### 1. Clone and create a virtual environment
+# ⚙️ Local Setup
+
+## 1. Clone Repository
 
 ```bash
 git clone <repo-url>
+
 cd ATS_SCORER
-python3 -m venv venvats
-source venvats/bin/activate      # Windows: venvats\Scripts\activate
 ```
 
-> Use the project’s actual virtual environment directory (`venvats`) — the repo includes that folder and the old `venv` path is not present here.
+Create a virtual environment:
 
-### 2. Install dependencies
+```bash
+python3 -m venv venvats
+
+source venvats/bin/activate
+```
+
+For Windows:
+
+```bash
+venvats\Scripts\activate
+```
+
+---
+
+## 2. Install Dependencies
+
+Install required packages:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Download spaCy language model:
+
+```bash
 python -m spacy download en_core_web_md
 ```
 
-WeasyPrint needs system libraries on Linux:
+---
 
-```bash
-# Fedora
-sudo dnf install -y cairo pango gdk-pixbuf2 libffi
+# 🔑 Environment Configuration
 
-# Debian / Ubuntu
-sudo apt install -y libcairo2 libpango-1.0-0 libpangoft2-1.0-0 libffi-dev
+Create your environment file:
+
+```
+.env
 ```
 
-### 3. Configure environment variables
+using:
 
-Copy the templates and fill in your keys:
-
-```bash
-cp .env.example .env
-cp frontend/.streamlit/secrets.toml.example frontend/.streamlit/secrets.toml
+```
+.env.example
 ```
 
-You need:
+Required services:
 
-- A **Supabase** project — grab `SUPABASE_URL`, `SUPABASE_KEY` (service role), and `SUPABASE_ANON_KEY` from Project Settings → API.
-- A **Groq** API key from [console.groq.com](https://console.groq.com).
-- (Optional) Google OAuth set up in the Supabase dashboard if you want Google sign-in.
+## Supabase
 
-The Streamlit frontend reads Supabase config from `frontend/.streamlit/secrets.toml`. The example file contains the required keys for local development.
+Required variables:
 
-### 4. Run the backend
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+
+Supabase is used for:
+
+- User authentication
+- Database storage
+- Saved analysis history
+
+---
+
+## Groq API
+
+Required variable:
+
+- `GROQ_API_KEY`
+
+Used for generating AI-powered resume improvement suggestions.
+
+---
+
+## Google OAuth (Optional)
+
+Google login can be enabled through the Supabase authentication dashboard.
+
+---
+
+# ▶️ Running the Application Locally
+
+## Start Backend
 
 From the project root:
 
@@ -85,21 +253,85 @@ From the project root:
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The API is now at `http://localhost:8000`.
+Backend will run at:
 
-### 5. Run the frontend
+```
+http://localhost:8000
+```
 
-In a new terminal (with the venv activated):
+FastAPI documentation:
+
+```
+http://localhost:8000/docs
+```
+
+---
+
+## Start Frontend
+
+Open another terminal:
 
 ```bash
 streamlit run frontend/streamlit_app.py
 ```
 
-The app opens at `http://localhost:8501`.
+Frontend will run at:
 
-## Notes for students
+```
+http://localhost:8501
+```
 
-- **Never commit `.env` or `secrets.toml`** — they hold API keys. Both are in `.gitignore`; check before you push.
-- The first run downloads the Sentence Transformer model (~80 MB). It's cached afterwards.
-- If you don't have a Groq key yet, the scoring still works — only the LLM suggestions section will be empty.
-- `jupyter notebooks/` and `ml model/` are for experimentation and aren't required to run the app.
+---
+
+# 🌐 Production Deployment
+
+## Frontend
+
+Deployed using:
+
+**Streamlit Cloud**
+
+The frontend communicates with the backend through REST API calls.
+
+---
+
+## Backend
+
+Deployed using:
+
+**Railway**
+
+The FastAPI backend handles:
+
+- Resume processing
+- NLP analysis
+- ATS scoring
+- AI suggestions
+- Database communication
+
+---
+
+# 🔒 Security Notes
+
+- Never commit `.env` files
+- Never commit `secrets.toml`
+- Keep API keys inside deployment environment variables
+- Never expose Supabase service role keys publicly
+- Use Supabase anonymous keys only on frontend applications
+
+---
+
+# 📌 Additional Notes
+
+- The Sentence Transformer model downloads automatically on the first run and is cached afterwards.
+- ATS scoring works without Groq, but AI-generated suggestions require a Groq API key.
+- Jupyter notebooks contain research experiments and are not required for running the application.
+- ML artifacts are included for experimentation and future improvements.
+
+---
+
+# 👨‍💻 Project Overview
+
+ATS Resume Scorer is an AI/NLP-based career assistance platform designed to help job seekers improve their resumes by combining traditional ATS scoring methods with modern semantic search and large language models.
+
+The goal is to provide candidates with clear insights into resume quality, job-description alignment, missing skills, and practical improvements that increase their chances of passing automated resume screening systems.

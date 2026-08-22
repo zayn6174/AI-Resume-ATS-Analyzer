@@ -7,9 +7,8 @@ import streamlit as st
 
 DEFAULT_BACKEND_URL = os.getenv(
     "BACKEND_URL",
-    "http://127.0.0.1:8000"
+    "https://ai-resume-ats-analyzer-production.up.railway.app"
 )
-
 
 def _backend_url() -> str:
     try:
