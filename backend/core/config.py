@@ -54,4 +54,3 @@ SUPABASE_JWT_SECRET= os.getenv('SUPABASE_JWT_SECRET', '')   # used by backend to
 GROQ_API_KEY       = os.getenv('GROQ_API_KEY', '')
 
 
-print("JWT loaded:", bool(SUPABASE_JWT_SECRET))

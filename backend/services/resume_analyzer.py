@@ -1,11 +1,26 @@
 import spacy
 from sentence_transformers import SentenceTransformer
 from typing import Dict, List, Optional
-from backend.models.schemas import IssueDetail
-from backend.services.groq_parser import parse_resume, parse_job_description
-from backend.services.jd_matcher import compare_resume_with_jd
-from backend.services.feedback_engine import analyze_issues, generate_issues_summary
-from backend.services.ats_scorer import calculate_overall_score, validate_skills_with_projects
+
+from backend.services.groq_parser import (
+    parse_resume,
+    parse_job_description
+)
+from backend.services.jd_matcher import (
+    compare_resume_with_jd
+)
+from backend.services.feedback_engine import (
+    analyze_issues,
+    generate_issues_summary
+)
+from backend.services.ats_scorer import (
+    calculate_overall_score,
+    validate_skills_with_projects
+)
+from backend.utils.file_utils import (
+    get_default_grammar_results,
+    get_default_location_results,
+)
 
 
 def analyze_full_resume(
@@ -15,39 +30,18 @@ def analyze_full_resume(
     job_description: Optional[str] = None,
 ) -> Dict:
 
-    import time
-
-    start = time.time()
-
-    print("==== ENTERED analyze_full_resume ====", flush=True)
-
-    print("STEP 1: Starting Groq resume parsing", flush=True)
-
     parsed_resume = parse_resume(resume_text)
-
-    print(
-        f"STEP 1 DONE: Groq parsing took {time.time()-start:.2f}s",
-        flush=True
-    )
-
-    print(
-        f"Skills found: {len(parsed_resume.get('skills', []))}",
-        flush=True
-    )
-
 
     skills = parsed_resume.get("skills", [])
     projects = parsed_resume.get("projects", [])
     keywords = parsed_resume.get("keywords", [])
     action_verbs = parsed_resume.get("action_verbs", [])
 
-
     experience_months = sum(
         int(e.get("duration_months", 0))
         for e in parsed_resume.get("experience", [])
         if isinstance(e, dict)
     )
-
 
     contact_info = {
         "email": parsed_resume.get("email"),
@@ -57,11 +51,6 @@ def analyze_full_resume(
         "portfolio": None,
     }
 
-
-    print("STEP 2: Starting skill validation", flush=True)
-
-    skill_start=time.time()
-
     skill_validation = validate_skills_with_projects(
         skills=skills,
         projects=projects,
@@ -69,21 +58,10 @@ def analyze_full_resume(
         embedder=embedder,
     )
 
-    print(
-        f"STEP 2 DONE: Skill validation took {time.time()-skill_start:.2f}s",
-        flush=True
-    )
-
-
     jd_comparison_result = None
     jd_keywords = None
 
-
     if job_description and job_description.strip():
-
-        print("STEP 3: Starting JD comparison", flush=True)
-
-        jd_start=time.time()
 
         parsed_jd = parse_job_description(
             job_description.strip()
@@ -95,7 +73,6 @@ def analyze_full_resume(
             + parsed_jd.get("preferred_skills", [])
         ))
 
-
         jd_comparison_result = compare_resume_with_jd(
             resume_text=resume_text,
             resume_keywords=keywords,
@@ -105,28 +82,9 @@ def analyze_full_resume(
             embedder=embedder,
             nlp=nlp,
         )
-        print(
-            f"JD comparison took {time.time()-jd_start:.2f}s",
-            flush=True
-        )
-
-        print("STEP 3 DONE: JD comparison finished", flush=True)
-
-
-
-    from backend.utils.file_utils import (
-        get_default_grammar_results,
-        get_default_location_results,
-    )
-
 
     grammar_results = get_default_grammar_results()
     location_results = get_default_location_results()
-
-
-    print("STEP 4: Starting ATS scoring", flush=True)
-
-    ats_start=time.time()
 
     scores = calculate_overall_score(
         text=resume_text,
@@ -140,19 +98,6 @@ def analyze_full_resume(
         jd_keywords=jd_keywords,
         experience_months=experience_months,
     )
-    print (
-        f"ATS scoring took {time.time()-ats_start:.2f}s",
-        flush=True
-    )
-
-
-    print("STEP 4 DONE: ATS scoring completed", flush=True)
-
-
-
-    print("STEP 5: Starting feedback analysis", flush=True)
-
-    feedback_start=time.time()
 
     detailed_feedback = analyze_issues(
         resume_text=resume_text,
@@ -164,29 +109,20 @@ def analyze_full_resume(
         scores=scores,
         contact_info=contact_info,
     )
-    print(
-        f"Feedback took {time.time()-feedback_start:.2f}s",
-        flush=True
-    )
-
-
-    print("STEP 5 DONE: Feedback completed", flush=True)
-
-
 
     issues_summary = generate_issues_summary(
         detailed_feedback
     )
 
-
     validated_raw = skill_validation.get(
-        "validated_skills", []
+        "validated_skills",
+        []
     )
 
     unvalidated_raw = skill_validation.get(
-        "unvalidated_skills", []
+        "unvalidated_skills",
+        []
     )
-
 
     total_skills = len(validated_raw) + len(unvalidated_raw)
 
@@ -196,7 +132,6 @@ def analyze_full_resume(
         else 0,
         1
     )
-
 
     skill_validation_details = {
         "validated": [
@@ -212,15 +147,7 @@ def analyze_full_resume(
         "validation_pct": val_pct,
     }
 
-
-    print(
-        f"COMPLETE: Total analysis time {time.time()-start:.2f}s",
-        flush=True
-    )
-
-
     return {
-
         "ATS_score": scores["overall_score"],
         "ats_score": scores["overall_score"],
 
@@ -268,48 +195,76 @@ def analyze_full_resume(
             ""
         ),
 
-        "skill_validation_details":
-            skill_validation_details,
+        "skill_validation_details": skill_validation_details,
 
-        "experience_months":
-            experience_months,
+        "experience_months": experience_months,
     }
 
 
-
-
-
-
 def _generate_strengths(
-    parsed_resume: Dict, skills: List, projects: List,
-    action_verbs: List, skill_validation: Dict, scores: Dict,
+    parsed_resume: Dict,
+    skills: List,
+    projects: List,
+    action_verbs: List,
+    skill_validation: Dict,
+    scores: Dict,
 ) -> List[str]:
-    """Generate a list of things the resume does well, based on actual structured data."""
+
     strengths = []
 
-    if parsed_resume.get('experience'):
-        strengths.append("Has a dedicated Experience section")
-    if parsed_resume.get('projects') or len(projects) > 0:
-        strengths.append("Includes a Projects section showcasing applied skills")
-    if parsed_resume.get('education'):
-        strengths.append("Education section is present")
-    if parsed_resume.get('skills'):
-        strengths.append("Clear Skills section with listed technologies")
-    if parsed_resume.get('professional_summary', '').strip():
-        strengths.append("Professional Summary provides a quick overview")
+    if parsed_resume.get("experience"):
+        strengths.append(
+            "Has a dedicated Experience section"
+        )
+
+    if parsed_resume.get("projects") or len(projects) > 0:
+        strengths.append(
+            "Includes a Projects section showcasing applied skills"
+        )
+
+    if parsed_resume.get("education"):
+        strengths.append(
+            "Education section is present"
+        )
+
+    if parsed_resume.get("skills"):
+        strengths.append(
+            "Clear Skills section with listed technologies"
+        )
+
+    if parsed_resume.get("professional_summary", "").strip():
+        strengths.append(
+            "Professional Summary provides a quick overview"
+        )
 
     if len(skills) >= 8:
-        strengths.append(f"Strong skill set — {len(skills)} skills detected")
+        strengths.append(
+            f"Strong skill set — {len(skills)} skills detected"
+        )
+
     if len(action_verbs) >= 5:
-        strengths.append(f"Uses {len(action_verbs)} strong action verbs in bullet points")
+        strengths.append(
+            f"Uses {len(action_verbs)} strong action verbs in bullet points"
+        )
 
-    validated = skill_validation.get('validated_skills', [])
+    validated = skill_validation.get(
+        "validated_skills",
+        []
+    )
+
     if len(validated) >= 3:
-        strengths.append(f"{len(validated)} skills are backed by project/experience evidence")
+        strengths.append(
+            f"{len(validated)} skills are backed by project/experience evidence"
+        )
 
-    if scores.get('formatting_score', 0) >= 16:
-        strengths.append("Well-formatted and ATS-friendly structure")
-    if scores.get('content_score', 0) >= 20:
-        strengths.append("Content quality is high with measurable achievements")
+    if scores.get("formatting_score", 0) >= 16:
+        strengths.append(
+            "Well-formatted and ATS-friendly structure"
+        )
+
+    if scores.get("content_score", 0) >= 20:
+        strengths.append(
+            "Content quality is high with measurable achievements"
+        )
 
     return strengths

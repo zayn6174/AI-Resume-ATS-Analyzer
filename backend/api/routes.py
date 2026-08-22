@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import List, Optional
 from backend.services.resume_analyzer import analyze_full_resume
 
@@ -30,9 +29,6 @@ async def analyze_resume(
     user_id: str = Depends(get_current_user),
 ):
    
-    warnings: List[str] = []
-
-    logger.info("=== ANALYZE ENDPOINT ENTERED ===")
 
 
     nlp      = request.app.state.nlp
@@ -40,7 +36,7 @@ async def analyze_resume(
 
 
     try:
-        parse_start = time.time()
+       
 
         file_bytes = await resume.read()
         filename = resume.filename or 'resume'
@@ -60,12 +56,7 @@ async def analyze_resume(
         logger.info("STEP 3: resume parsed successfully")
         logger.info(f"Parsed '{filename}': {len(resume_text)} chars extracted")
 
-        logger.info(
-            f"Parsed '{filename}': "
-            f"{len(resume_text)} chars extracted "
-            f"in {time.time() - parse_start:.2f}s"
-        )
-
+        
     except Exception as exc:
         logger.error(f'File parsing failed: {exc}')
         raise HTTPException(
@@ -77,7 +68,6 @@ async def analyze_resume(
     try:
         logger.info("STEP 4: starting analysis pipeline")
 
-        analysis_start = time.time()
 
         result = analyze_full_resume(
             resume_text=resume_text,
@@ -85,23 +75,10 @@ async def analyze_resume(
             embedder=embedder,
             job_description=job_description
         )
-        # TEMP DEBUG
-        logger.warning("========== ANALYSIS DEBUG ==========")
-        logger.warning(f"Resume text length: {len(resume_text)}")
-        logger.warning(f"Result keys: {result.keys()}")
-        logger.warning(f"Skills: {result.get('skills')}")
-        logger.warning(f"ATS Score: {result.get('ats_score')}")
-        logger.warning("====================================")
 
+        logger.info("Analysis pipeline completed successfully")
 
-        logger.info(
-            f"STEP 5: analysis pipeline finished in {time.time()-analysis_start:.2f}s"
-        )
-
-        logger.info(
-                    f"Analysis completed in "
-                    f"{time.time() - analysis_start:.2f}s"
-        )
+    
     except Exception as exc:
         logger.error(f'Full analysis pipeline failed: {exc}')
         raise HTTPException(status_code=500, detail=f'Analysis pipeline failed: {exc}')
@@ -167,20 +144,7 @@ async def health_check(request: Request):
         'nlp_loaded':      request.app.state.nlp is not None,
         'embedder_loaded': request.app.state.embedder is not None,
     }
-@router.post("/test-upload")
-async def test_upload(
-    resume: UploadFile = File(...)
-):
-    logger.info("TEST UPLOAD RECEIVED")
 
-    data = await resume.read()
-
-    logger.info(f"TEST FILE SIZE: {len(data)}")
-
-    return {
-        "filename": resume.filename,
-        "size": len(data)
-    }
 
 @router.get('/history')
 async def get_history(user_id: str = Depends(get_current_user)):

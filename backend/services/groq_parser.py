@@ -4,11 +4,15 @@ import logging
 from typing import Dict
 
 from groq import Groq
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger=logging.getLogger('ats_resume_scorer')
 
 
-GROQ_MODEL='openai/gpt-oss-120b'
+GROQ_RESUME_MODEL='openai/gpt-oss-120b'
+GROQ_JD_MODEL="openai/gpt-oss-20b"
 
 _client=None
 
@@ -75,18 +79,29 @@ Important instructions:
 Resume Text:
 {raw_text}"""
 
-def _call_groq(client:Groq, system_prompt:str, user_prompt:str)->str:
+def _call_groq(
+    client: Groq,
+    system_prompt: str,
+    user_prompt: str,
+    model: str
+) -> str:
 
-    response=client.chat.completions.create(
-        model=GROQ_MODEL, 
+    response = client.chat.completions.create(
+        model=model,
         messages=[
-            {'role': 'system', 'content': system_prompt},
-            {'role': 'user', 'content': user_prompt}
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {
+                "role": "user",
+                "content": user_prompt
+            }
         ],
-        temperature=0.0,
+        temperature=0.1,
         max_tokens=4096,
         response_format={
-            "type":"json_object"
+            "type": "json_object"
         }
     )
 
@@ -119,23 +134,11 @@ def parse_resume(raw_text: str) -> Dict:
     raw_response = _call_groq(
         client,
         RESUME_SYSTEM_PROMPT,
-        prompt
+        prompt,
+        GROQ_RESUME_MODEL
     )
 
-    # 👇 ADD HERE
-    logger.warning("========== GROQ RAW RESPONSE ==========")
-    logger.warning(raw_response[:1000])
-    logger.warning("========================================")
-
     result = _try_parse_json(raw_response)
-
-    logger.warning(f"GROQ RESULT EXISTS: {result is not None}")
-
-    if result:
-        logger.warning(f"Keys: {result.keys()}")
-        logger.warning(f"Skills count: {len(result.get('skills', []))}")
-        logger.warning(f"Experience count: {len(result.get('experience', []))}")
-        logger.warning(f"Projects count: {len(result.get('projects', []))}")
 
     if result is not None:
         return _validate_resume_result(result)
@@ -150,7 +153,7 @@ def parse_resume(raw_text: str) -> Dict:
         "Return ONLY the raw JSON object, no markdown, no explanation, no code fences.\n\n"
         + prompt
     )
-    raw_response = _call_groq(client, RESUME_SYSTEM_PROMPT, strict_prompt)
+    raw_response = _call_groq(client, RESUME_SYSTEM_PROMPT, strict_prompt,GROQ_RESUME_MODEL)
     result = _try_parse_json(raw_response)
     if result is not None:
         return _validate_resume_result(result)
@@ -186,11 +189,25 @@ Job Description Text:
 {raw_text}"""
 
 def parse_job_description(raw_text: str) -> Dict:
+
+
     client = _get_client()
+
+
     prompt = JD_USER_PROMPT.format(raw_text=raw_text)
 
-    raw_response = _call_groq(client, JD_SYSTEM_PROMPT, prompt)
+       
+
+    raw_response = _call_groq(
+        client,
+        JD_SYSTEM_PROMPT,
+        prompt,
+        GROQ_JD_MODEL
+    )
+
+  
     result = _try_parse_json(raw_response)
+
     if result is not None:
         return _validate_jd_result(result)
 
@@ -200,7 +217,7 @@ def parse_job_description(raw_text: str) -> Dict:
         "Return ONLY the raw JSON object, no markdown, no explanation, no code fences.\n\n"
         + prompt
     )
-    raw_response = _call_groq(client, JD_SYSTEM_PROMPT, strict_prompt)
+    raw_response = _call_groq(client, JD_SYSTEM_PROMPT, strict_prompt,GROQ_JD_MODEL)
     result = _try_parse_json(raw_response)
     if result is not None:
         return _validate_jd_result(result)

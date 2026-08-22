@@ -1,5 +1,4 @@
 import logging
-import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,20 +50,11 @@ app=FastAPI(
 )
 @app.middleware("http")
 async def log_requests(request, call_next):
-    import time
-
-    start = time.time()
-
     logger.info(
-        f"REQUEST START: {request.method} {request.url.path}"
+        f"REQUEST: {request.method} {request.url.path}"
     )
 
     response = await call_next(request)
-
-    logger.info(
-        f"REQUEST END: {request.method} {request.url.path} "
-        f"({time.time()-start:.2f}s)"
-    )
 
     return response
 
@@ -102,5 +92,5 @@ if __name__=='__main__':
         'backend.main:app',
         host    = '0.0.0.0',
         port    = 8000,
-        reload  = True,    # Auto-restart on code changes (dev only)
+        reload  = False,    # Auto-restart on code changes (dev only)
     )

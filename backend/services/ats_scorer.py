@@ -124,14 +124,7 @@ def validate_skills_with_projects(
     embedder: SentenceTransformer,
     threshold: float = 0.6,
 ) -> Dict:
-    import time
-
-    print("BEFORE SKILL VALIDATION", flush=True)
-    skill_start = time.time()
     
-    print("SKILLS COUNT:", len(skills), flush=True)
-    print("PROJECTS COUNT:", len(projects), flush=True)
-    print("EXPERIENCE COUNT:", len(experience_entries), flush=True)
 
 
     if not skills:
@@ -176,11 +169,7 @@ def validate_skills_with_projects(
 
 # -----------------------------
 # Generate embeddings ONCE
-# -----------------------------
-
-    embedding_start = time.time()
-
-    print("A: STARTING EMBEDDINGS", flush=True)
+# ----------------------------
 
 
     text_embeddings = embedder.encode(
@@ -197,12 +186,6 @@ def validate_skills_with_projects(
     )
 
 
-    print(
-        f"B: EMBEDDINGS DONE: {time.time()-embedding_start:.2f}s",
-        flush=True
-    )
-
-
 # -----------------------------
 # Results containers
 # -----------------------------
@@ -216,19 +199,9 @@ def validate_skills_with_projects(
     # Compare vectors
     # -----------------------------
 
-    loop_start = time.time()
-
-    print("C: STARTING COMPARISON LOOP", flush=True)
 
 
     for skill_index, skill in enumerate(skills):
-
-        skill_start = time.time()
-
-        print(
-            f"VALIDATING SKILL {skill_index+1}/{len(skills)}: {skill}",
-            flush=True
-        )
 
 
         matching_projects = []
@@ -321,17 +294,6 @@ def validate_skills_with_projects(
             skill_project_mapping[skill] = []
 
 
-        print(
-            f"SKILL TIME: {skill} -> {time.time()-skill_start:.3f}s",
-            flush=True
-        )
-
-
-    print(
-        f"D: COMPARISON LOOP DONE: {time.time()-loop_start:.2f}s",
-        flush=True
-    )
-
 
     # -----------------------------
     # Final score
@@ -345,13 +307,6 @@ def validate_skills_with_projects(
     validation_score = (
         validation_percentage * 15.0
     )
-
-
-    print(
-        "E: BEFORE RETURN FROM VALIDATION",
-        flush=True
-    )
-
 
     return {
         "validated_skills": validated_skills,
