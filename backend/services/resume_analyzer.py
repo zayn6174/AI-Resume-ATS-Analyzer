@@ -60,6 +60,8 @@ def analyze_full_resume(
 
     print("STEP 2: Starting skill validation", flush=True)
 
+    skill_start=time.time()
+
     skill_validation = validate_skills_with_projects(
         skills=skills,
         projects=projects,
@@ -68,7 +70,7 @@ def analyze_full_resume(
     )
 
     print(
-        f"STEP 2 DONE: Skill validation took {time.time()-start:.2f}s",
+        f"STEP 2 DONE: Skill validation took {time.time()-skill_start:.2f}s",
         flush=True
     )
 
@@ -80,6 +82,8 @@ def analyze_full_resume(
     if job_description and job_description.strip():
 
         print("STEP 3: Starting JD comparison", flush=True)
+
+        jd_start=time.time()
 
         parsed_jd = parse_job_description(
             job_description.strip()
@@ -101,6 +105,10 @@ def analyze_full_resume(
             embedder=embedder,
             nlp=nlp,
         )
+        print(
+            f"JD comparison took {time.time()-jd_start:.2f}s",
+            flush=True
+        )
 
         print("STEP 3 DONE: JD comparison finished", flush=True)
 
@@ -118,6 +126,7 @@ def analyze_full_resume(
 
     print("STEP 4: Starting ATS scoring", flush=True)
 
+    ats_start=time.time()
 
     scores = calculate_overall_score(
         text=resume_text,
@@ -131,6 +140,10 @@ def analyze_full_resume(
         jd_keywords=jd_keywords,
         experience_months=experience_months,
     )
+    print (
+        f"ATS scoring took {time.time()-ats_start:.2f}s",
+        flush=True
+    )
 
 
     print("STEP 4 DONE: ATS scoring completed", flush=True)
@@ -139,6 +152,7 @@ def analyze_full_resume(
 
     print("STEP 5: Starting feedback analysis", flush=True)
 
+    feedback_start=time.time()
 
     detailed_feedback = analyze_issues(
         resume_text=resume_text,
@@ -149,6 +163,10 @@ def analyze_full_resume(
         skill_validation=skill_validation,
         scores=scores,
         contact_info=contact_info,
+    )
+    print(
+        f"Feedback took {time.time()-feedback_start:.2f}s",
+        flush=True
     )
 
 

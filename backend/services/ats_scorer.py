@@ -172,7 +172,7 @@ def validate_skills_with_projects(
         all_texts.append(experience_text)
 
 
-    import time
+  
 
 # -----------------------------
 # Generate embeddings ONCE
@@ -238,42 +238,52 @@ def validate_skills_with_projects(
         skill_vec = skill_embeddings[skill_index]
 
 
-        # Compare projects
+        # -----------------------------
+        # Compare with projects
+        # -----------------------------
         for project_index, project in enumerate(projects):
 
             project_vec = text_embeddings[project_index]
+            project_text = project_texts[project_index]
 
+            # exact keyword match first
+            if skill.lower().strip() in project_text.lower():
+                similarity = 1.0
 
-            similarity = float(
-                np.dot(skill_vec, project_vec)
-            )
-
+            else:
+                similarity = float(
+                    np.dot(skill_vec, project_vec)
+                )
 
             max_similarity = max(
                 max_similarity,
                 similarity
             )
 
-
             if similarity >= threshold:
-
                 matching_projects.append(
                     project.get(
                         "title",
-                        "Untitled Project"
-                    )
-                )
+                "Untitled Project"
+            )
+        )
 
 
-        # Compare experience
+        # -----------------------------
+        # Compare with experience
+        # -----------------------------
         if experience_text:
 
             experience_vec = text_embeddings[-1]
 
+            # exact keyword match first
+            if skill.lower().strip() in experience_text.lower():
+                similarity = 1.0
 
-            similarity = float(
-                np.dot(skill_vec, experience_vec)
-            )
+            else:
+                similarity = float(
+                    np.dot(skill_vec, experience_vec)
+                )
 
 
             max_similarity = max(
@@ -288,7 +298,7 @@ def validate_skills_with_projects(
 
                     matching_projects.append(
                         "Experience Section"
-                    )
+            )
 
 
         if matching_projects:
