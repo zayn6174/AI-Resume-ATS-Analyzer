@@ -116,6 +116,7 @@ def _skill_matches(skill: str, text: str, embedder: SentenceTransformer, thresho
     return sim >= threshold, sim
 
 #Skill validation
+
 def validate_skills_with_projects(
     skills: List[str],
     projects: List[Dict],
@@ -123,66 +124,233 @@ def validate_skills_with_projects(
     embedder: SentenceTransformer,
     threshold: float = 0.6,
 ) -> Dict:
+    import time
+
+    print("BEFORE SKILL VALIDATION", flush=True)
+    skill_start = time.time()
     
+    print("SKILLS COUNT:", len(skills), flush=True)
+    print("PROJECTS COUNT:", len(projects), flush=True)
+    print("EXPERIENCE COUNT:", len(experience_entries), flush=True)
+
+
     if not skills:
         return {
-            'validated_skills':      [],
-            'unvalidated_skills':    [],
-            'validation_percentage': 0.0,
-            'skill_project_mapping': {},
-            'validation_score':      0.0,
+            "validated_skills": [],
+            "unvalidated_skills": [],
+            "validation_percentage": 0.0,
+            "skill_project_mapping": {},
+            "validation_score": 0.0,
         }
 
-    experience_text = ' '.join(
-        f"{e.get('job_title', '')} {e.get('company', '')} {e.get('description', '')}"
+
+    # -----------------------------
+    # Prepare experience text once
+    # -----------------------------
+
+    experience_text = " ".join(
+        f"{e.get('job_title', '')} "
+        f"{e.get('company', '')} "
+        f"{e.get('description', '')}"
         for e in experience_entries
         if isinstance(e, dict)
     ).strip()
 
-    validated_skills      = []
-    unvalidated_skills    = []
+
+    # -----------------------------
+    # Prepare all texts once
+    # -----------------------------
+
+    project_texts = [
+        f"{p.get('title', '')} {p.get('description', '')}"
+        for p in projects
+    ]
+
+    all_texts = project_texts.copy()
+
+    if experience_text:
+        all_texts.append(experience_text)
+
+
+    import time
+
+# -----------------------------
+# Generate embeddings ONCE
+# -----------------------------
+
+    embedding_start = time.time()
+
+    print("A: STARTING EMBEDDINGS", flush=True)
+
+
+    text_embeddings = embedder.encode(
+        all_texts,
+        convert_to_numpy=True,
+        normalize_embeddings=True
+    )
+
+
+    skill_embeddings = embedder.encode(
+        skills,
+        convert_to_numpy=True,
+        normalize_embeddings=True
+    )
+
+
+    print(
+        f"B: EMBEDDINGS DONE: {time.time()-embedding_start:.2f}s",
+        flush=True
+    )
+
+
+# -----------------------------
+# Results containers
+# -----------------------------
+
+    validated_skills = []
+    unvalidated_skills = []
     skill_project_mapping = {}
 
-    for idx, skill in enumerate(skills, 1):
+
+    # -----------------------------
+    # Compare vectors
+    # -----------------------------
+
+    loop_start = time.time()
+
+    print("C: STARTING COMPARISON LOOP", flush=True)
+
+
+    for skill_index, skill in enumerate(skills):
+
+        skill_start = time.time()
+
         print(
-            f"VALIDATING SKILL {idx}/{len(skills)}: {skill}",
+            f"VALIDATING SKILL {skill_index+1}/{len(skills)}: {skill}",
             flush=True
         )
+
 
         matching_projects = []
         max_similarity = 0.0
 
-        for project in projects:
-            project_text = f"{project.get('title', '')} {project.get('description', '')}"
-            matched, sim = _skill_matches(skill, project_text, embedder, threshold)
-            max_similarity = max(max_similarity, sim)
 
-            if matched:
-                matching_projects.append(project.get('title', 'Untitled Project'))
+        skill_vec = skill_embeddings[skill_index]
 
+
+        # Compare projects
+        for project_index, project in enumerate(projects):
+
+            project_vec = text_embeddings[project_index]
+
+
+            similarity = float(
+                np.dot(skill_vec, project_vec)
+            )
+
+
+            max_similarity = max(
+                max_similarity,
+                similarity
+            )
+
+
+            if similarity >= threshold:
+
+                matching_projects.append(
+                    project.get(
+                        "title",
+                        "Untitled Project"
+                    )
+                )
+
+
+        # Compare experience
         if experience_text:
-            matched, sim = _skill_matches(skill, experience_text, embedder, threshold)
-            max_similarity = max(max_similarity, sim)
-            if matched and 'Experience Section' not in matching_projects:
-                matching_projects.append('Experience Section')
+
+            experience_vec = text_embeddings[-1]
+
+
+            similarity = float(
+                np.dot(skill_vec, experience_vec)
+            )
+
+
+            max_similarity = max(
+                max_similarity,
+                similarity
+            )
+
+
+            if similarity >= threshold:
+
+                if "Experience Section" not in matching_projects:
+
+                    matching_projects.append(
+                        "Experience Section"
+                    )
+
 
         if matching_projects:
-            validated_skills.append({'skill': skill, 'projects': matching_projects, 'similarity': max_similarity})
+
+            validated_skills.append(
+                {
+                    "skill": skill,
+                    "projects": matching_projects,
+                    "similarity": max_similarity,
+                }
+            )
+
             skill_project_mapping[skill] = matching_projects
+
+
         else:
+
             unvalidated_skills.append(skill)
+
             skill_project_mapping[skill] = []
 
-    validation_percentage = len(validated_skills) / len(skills)
-    validation_score      = validation_percentage * 15.0
+
+        print(
+            f"SKILL TIME: {skill} -> {time.time()-skill_start:.3f}s",
+            flush=True
+        )
+
+
+    print(
+        f"D: COMPARISON LOOP DONE: {time.time()-loop_start:.2f}s",
+        flush=True
+    )
+
+
+    # -----------------------------
+    # Final score
+    # -----------------------------
+
+    validation_percentage = (
+        len(validated_skills) / len(skills)
+    )
+
+
+    validation_score = (
+        validation_percentage * 15.0
+    )
+
+
+    print(
+        "E: BEFORE RETURN FROM VALIDATION",
+        flush=True
+    )
+
 
     return {
-        'validated_skills':      validated_skills,
-        'unvalidated_skills':    unvalidated_skills,
-        'validation_percentage': validation_percentage,
-        'skill_project_mapping': skill_project_mapping,
-        'validation_score':      validation_score,
+        "validated_skills": validated_skills,
+        "unvalidated_skills": unvalidated_skills,
+        "validation_percentage": validation_percentage,
+        "skill_project_mapping": skill_project_mapping,
+        "validation_score": validation_score,
     }
+
 
 #01: formatting score
 def _calc_formatting_score(parsed_resume: Dict, text: str) -> float:
