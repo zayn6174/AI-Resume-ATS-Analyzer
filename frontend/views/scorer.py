@@ -829,9 +829,6 @@ def render() -> None:
             "this can take 10–30 seconds."
         ):
 
-            st.write("TOKEN LENGTH:", len(access_token))
-            st.write("TOKEN START:", access_token[:20])
-
 
             analysis = api_client.analyze_resume(
                 resume_file=resume_file,
